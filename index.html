@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ReadmeCraft — AI README Generator</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📖</text></svg>" />
+  <style>
+    body { background: #0f1117; color: #e2e8f0; }
+    .gradient-text { background: linear-gradient(135deg, #34d399, #60a5fa); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .card { background: #1a1d27; border: 1px solid #2d3148; }
+    .btn-primary { background: linear-gradient(135deg, #059669, #2563eb); }
+    .btn-primary:hover { opacity: 0.9; }
+    textarea, select, input { background: #0f1117; border-color: #2d3148; color: #e2e8f0; }
+    textarea:focus, select:focus, input:focus { border-color: #059669; outline: none; box-shadow: 0 0 0 1px #059669; }
+    .output-box { background: #0a0d14; border: 1px solid #2d3148; font-family: 'Courier New', monospace; white-space: pre-wrap; word-break: break-word; }
+    .badge { font-size: 0.65rem; padding: 2px 6px; border-radius: 9999px; font-weight: 700; letter-spacing: 0.05em; }
+    .suite-link { color: #818cf8; text-decoration: none; font-size: 0.8rem; }
+    .suite-link:hover { color: #a5b4fc; text-decoration: underline; }
+    .spinner { border: 3px solid #2d3148; border-top-color: #059669; border-radius: 50%; width: 24px; height: 24px; animation: spin 0.8s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .tag { display: inline-flex; align-items: center; gap: 4px; background: #1e2535; border: 1px solid #2d3148; border-radius: 6px; padding: 2px 8px; font-size: 0.75rem; color: #94a3b8; cursor: pointer; transition: all 0.15s; }
+    .tag:hover, .tag.active { background: #0d3027; border-color: #059669; color: #34d399; }
+  </style>
+</head>
+<body class="min-h-screen">
+
+  <!-- Header -->
+  <header class="border-b border-gray-800 px-6 py-4 flex items-center justify-between">
+    <div class="flex items-center gap-3">
+      <span class="text-2xl">📖</span>
+      <span class="font-bold text-lg gradient-text">ReadmeCraft</span>
+      <span class="badge bg-emerald-900 text-emerald-300">BETA</span>
+    </div>
+    <div class="flex items-center gap-4 text-sm">
+      <span class="text-gray-500">Part of the</span>
+      <div class="flex gap-3">
+        <a href="https://shiffasultan-collab.github.io/gitdigest-static/" class="suite-link">GitDigest</a>
+        <a href="https://shiffasultan-collab.github.io/commitcraft/" class="suite-link">CommitCraft</a>
+        <a href="https://shiffasultan-collab.github.io/prcraft/" class="suite-link">PRCraft</a>
+        <a href="https://shiffasultan-collab.github.io/changelogcraft/" class="suite-link">ChangelogCraft</a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Hero -->
+  <div class="text-center pt-12 pb-8 px-4">
+    <h1 class="text-4xl font-bold mb-3">
+      <span class="gradient-text">Generate a great README</span>
+    </h1>
+    <p class="text-gray-400 text-lg max-w-xl mx-auto">
+      Describe your project. Get a professional <code class="text-emerald-400">README.md</code> with all the right sections — in seconds.
+    </p>
+  </div>
+
+  <!-- API Key -->
+  <div class="max-w-3xl mx-auto px-4 mb-6">
+    <div class="card rounded-xl p-4">
+      <div class="flex items-center gap-2 mb-2">
+        <span class="text-yellow-400">🔑</span>
+        <span class="text-sm font-semibold text-gray-300">OpenAI API Key</span>
+        <span class="badge bg-green-900 text-green-400 ml-auto">stored locally only</span>
+      </div>
+      <input id="apiKey" type="password" placeholder="sk-..."
+        class="w-full rounded-lg px-3 py-2 text-sm border"
+        oninput="saveKey(this.value)" />
+      <p class="text-xs text-gray-600 mt-1">Your key never leaves your browser. <a href="https://platform.openai.com/api-keys" target="_blank" class="text-emerald-500 hover:underline">Get a key →</a></p>
+    </div>
+  </div>
+
+  <!-- Form -->
+  <div class="max-w-3xl mx-auto px-4 space-y-4">
+
+    <!-- Project basics -->
+    <div class="card rounded-xl p-4 space-y-3">
+      <div>
+        <label class="block text-sm font-semibold text-gray-300 mb-1">🏷️ Project name</label>
+        <input id="projectName" type="text" placeholder="e.g. TaskFlow, SnapAI, my-cool-cli"
+          class="w-full rounded-lg px-3 py-2 text-sm border" />
+      </div>
+      <div>
+        <label class="block text-sm font-semibold text-gray-300 mb-1">📝 What does it do?
+          <span class="text-gray-600 font-normal ml-1">— describe it like you'd explain to a dev friend</span>
+        </label>
+        <textarea id="description" rows="4"
+          placeholder="e.g. A CLI tool that watches your filesystem and auto-commits changes to git. Useful for journaling, log files, or any directory you want versioned automatically. Built with Node.js, uses chokidar for file watching."
+          class="w-full rounded-lg px-3 py-2 text-sm border"></textarea>
+      </div>
+    </div>
+
+    <!-- Options row -->
+    <div class="grid grid-cols-2 gap-4">
+      <div class="card rounded-xl p-4">
+        <label class="block text-sm font-semibold text-gray-300 mb-2">🛠️ Tech stack</label>
+        <input id="techStack" type="text" placeholder="e.g. Node.js, TypeScript, Redis"
+          class="w-full rounded-lg px-3 py-2 text-sm border" />
+      </div>
+      <div class="card rounded-xl p-4">
+        <label class="block text-sm font-semibold text-gray-300 mb-2">📄 README style</label>
+        <select id="style" class="w-full rounded-lg px-3 py-2 text-sm border">
+          <option value="standard">Standard (full README)</option>
+          <option value="minimal">Minimal (clean, short)</option>
+          <option value="badges">Badges + shields.io</option>
+          <option value="cli">CLI tool focused</option>
+          <option value="api">API / library focused</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Sections to include -->
+    <div class="card rounded-xl p-4">
+      <label class="block text-sm font-semibold text-gray-300 mb-3">📋 Sections to include
+        <span class="text-gray-600 font-normal ml-1">— click to toggle</span>
+      </label>
+      <div id="sections" class="flex flex-wrap gap-2">
+        <span class="tag active" data-section="installation">📦 Installation</span>
+        <span class="tag active" data-section="usage">🚀 Usage</span>
+        <span class="tag active" data-section="features">✨ Features</span>
+        <span class="tag active" data-section="contributing">🤝 Contributing</span>
+        <span class="tag active" data-section="license">📄 License</span>
+        <span class="tag" data-section="demo">🎬 Demo / Screenshot</span>
+        <span class="tag" data-section="api">📡 API Reference</span>
+        <span class="tag" data-section="configuration">⚙️ Configuration</span>
+        <span class="tag" data-section="faq">❓ FAQ</span>
+        <span class="tag" data-section="roadmap">🗺️ Roadmap</span>
+        <span class="tag" data-section="acknowledgements">🙏 Acknowledgements</span>
+      </div>
+    </div>
+
+    <!-- Generate -->
+    <button id="generateBtn" onclick="generateReadme()"
+      class="btn-primary w-full py-3 rounded-xl font-semibold text-white text-sm transition-all flex items-center justify-center gap-2">
+      <span>✨</span> Generate README
+    </button>
+
+    <!-- Output -->
+    <div id="outputSection" class="hidden">
+      <div class="flex items-center justify-between mb-2">
+        <span class="text-sm font-semibold text-gray-300">📋 Your README.md</span>
+        <div class="flex gap-2">
+          <button onclick="downloadOutput()"
+            class="text-xs bg-emerald-900 hover:bg-emerald-800 text-emerald-300 px-3 py-1 rounded-lg transition">
+            ⬇ Download .md
+          </button>
+          <button onclick="copyOutput()" id="copyBtn"
+            class="text-xs bg-blue-900 hover:bg-blue-800 text-blue-300 px-3 py-1 rounded-lg transition">
+            Copy
+          </button>
+        </div>
+      </div>
+      <div id="output" class="output-box rounded-xl p-4 text-sm text-green-300 min-h-48"></div>
+    </div>
+
+    <!-- Usage counter -->
+    <div class="text-center text-xs text-gray-600 pb-2">
+      <span id="usageDisplay"></span>
+    </div>
+
+  </div>
+
+  <!-- Suite footer -->
+  <div class="max-w-3xl mx-auto px-4 mt-10 mb-8">
+    <div class="card rounded-xl p-5">
+      <p class="text-xs text-gray-500 text-center mb-3 font-semibold uppercase tracking-wider">Developer Writing Suite — Complete Workflow</p>
+      <div class="grid grid-cols-5 gap-2 text-center text-xs">
+        <a href="https://shiffasultan-collab.github.io/gitdigest-static/" class="hover:opacity-80 transition">
+          <div class="text-xl mb-1">🔍</div>
+          <div class="text-gray-400 font-medium">GitDigest</div>
+          <div class="text-gray-600">Understand repos</div>
+        </a>
+        <a href="https://shiffasultan-collab.github.io/commitcraft/" class="hover:opacity-80 transition">
+          <div class="text-xl mb-1">💬</div>
+          <div class="text-gray-400 font-medium">CommitCraft</div>
+          <div class="text-gray-600">Write commits</div>
+        </a>
+        <a href="https://shiffasultan-collab.github.io/prcraft/" class="hover:opacity-80 transition">
+          <div class="text-xl mb-1">🔀</div>
+          <div class="text-gray-400 font-medium">PRCraft</div>
+          <div class="text-gray-600">Describe PRs</div>
+        </a>
+        <a href="https://shiffasultan-collab.github.io/changelogcraft/" class="hover:opacity-80 transition">
+          <div class="text-xl mb-1">📋</div>
+          <div class="text-gray-400 font-medium">ChangelogCraft</div>
+          <div class="text-gray-600">Ship changelogs</div>
+        </a>
+        <div class="opacity-50">
+          <div class="text-xl mb-1">📖</div>
+          <div class="text-emerald-400 font-medium">ReadmeCraft</div>
+          <div class="text-gray-600">You are here</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const DAILY_LIMIT = 5;
+    const STORAGE_KEY = 'readmecraft_key';
+    const USAGE_KEY = 'readmecraft_usage';
+
+    // Section toggles
+    document.querySelectorAll('.tag').forEach(tag => {
+      tag.addEventListener('click', () => tag.classList.toggle('active'));
+    });
+
+    function saveKey(val) { localStorage.setItem(STORAGE_KEY, val); }
+
+    function getUsage() {
+      const today = new Date().toDateString();
+      const raw = JSON.parse(localStorage.getItem(USAGE_KEY) || '{}');
+      if (raw.date !== today) return { date: today, count: 0 };
+      return raw;
+    }
+
+    function bumpUsage() {
+      const u = getUsage(); u.count++;
+      localStorage.setItem(USAGE_KEY, JSON.stringify(u));
+      return u.count;
+    }
+
+    function updateUsageDisplay() {
+      const u = getUsage();
+      const el = document.getElementById('usageDisplay');
+      if (el) el.textContent = `Free tier: ${u.count}/${DAILY_LIMIT} READMEs today`;
+    }
+
+    window.onload = () => {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) document.getElementById('apiKey').value = saved;
+      updateUsageDisplay();
+    };
+
+    function getActiveSections() {
+      return Array.from(document.querySelectorAll('.tag.active'))
+        .map(t => t.dataset.section);
+    }
+
+    async function generateReadme() {
+      const key = document.getElementById('apiKey').value.trim();
+      const name = document.getElementById('projectName').value.trim();
+      const description = document.getElementById('description').value.trim();
+      const techStack = document.getElementById('techStack').value.trim();
+      const style = document.getElementById('style').value;
+      const sections = getActiveSections();
+
+      if (!key) { alert('Please enter your OpenAI API key first.'); return; }
+      if (!description) { alert('Please describe your project.'); return; }
+
+      const u = getUsage();
+      if (u.count >= DAILY_LIMIT) {
+        alert(`Free limit reached (${DAILY_LIMIT}/day). Upgrade to Pro for unlimited READMEs!`);
+        return;
+      }
+
+      const btn = document.getElementById('generateBtn');
+      btn.innerHTML = '<div class="spinner mx-auto"></div>';
+      btn.disabled = true;
+
+      const styleGuides = {
+        standard: 'Write a comprehensive, professional README with clear sections and good structure.',
+        minimal: 'Write a clean, minimal README. No fluff. Just what devs need to get started fast.',
+        badges: 'Include shields.io badge placeholders at the top (build, version, license, etc.). Use standard badge markdown syntax.',
+        cli: 'Focus on CLI usage: prominent command examples, flags/options table, shell code blocks. Less prose, more commands.',
+        api: 'Focus on API/library usage: function signatures, code examples for common use cases, TypeScript types if relevant.'
+      };
+
+      const sectionList = sections.length > 0
+        ? `Include these sections: ${sections.join(', ')}.`
+        : 'Include standard README sections.';
+
+      const systemPrompt = `You are a README generator. Write a high-quality README.md for a software project.
+${styleGuides[style]}
+${sectionList}
+${techStack ? `Tech stack: ${techStack}.` : ''}
+Use proper Markdown formatting. Code blocks with language hints. Clear headings.
+Only output the README content — no extra commentary or wrapper text.
+Make it genuinely useful and developer-friendly, not generic filler.`;
+
+      const userMsg = `Project name: ${name || 'My Project'}
+Description: ${description}`;
+
+      try {
+        const res = await fetch('https://api.openai.com/v1/chat/completions', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${key}` },
+          body: JSON.stringify({
+            model: 'gpt-4o-mini',
+            messages: [
+              { role: 'system', content: systemPrompt },
+              { role: 'user', content: userMsg }
+            ],
+            temperature: 0.4,
+            max_tokens: 1200
+          })
+        });
+
+        if (!res.ok) {
+          const err = await res.json();
+          throw new Error(err.error?.message || 'API error');
+        }
+
+        const data = await res.json();
+        const result = data.choices[0].message.content.trim();
+
+        document.getElementById('output').textContent = result;
+        document.getElementById('outputSection').classList.remove('hidden');
+        bumpUsage();
+        updateUsageDisplay();
+
+      } catch (err) {
+        alert('Error: ' + err.message);
+      } finally {
+        btn.innerHTML = '<span>✨</span> Generate README';
+        btn.disabled = false;
+      }
+    }
+
+    function copyOutput() {
+      const text = document.getElementById('output').textContent;
+      navigator.clipboard.writeText(text).then(() => {
+        const btn = document.getElementById('copyBtn');
+        btn.textContent = '✅ Copied!';
+        setTimeout(() => btn.textContent = 'Copy', 2000);
+      });
+    }
+
+    function downloadOutput() {
+      const text = document.getElementById('output').textContent;
+      const name = document.getElementById('projectName').value.trim() || 'project';
+      const blob = new Blob([text], { type: 'text/markdown' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'README.md';
+      a.click();
+    }
+  </script>
+</body>
+</html>
